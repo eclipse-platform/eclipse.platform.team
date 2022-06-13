@@ -47,17 +47,13 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IStorage;
 import org.eclipse.core.resources.IWorkspaceRoot;
-import org.eclipse.core.resources.ProjectScope;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.Path;
-import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.SubMonitor;
-import org.eclipse.core.runtime.preferences.IScopeContext;
-import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.eclipse.jface.text.TextUtilities;
 
 /**
@@ -366,7 +362,7 @@ public class Patcher implements IHunkFilter {
 		if (!file.exists()) {
 			if (FileBuffers.getTextFileBufferManager().isTextFileLocation(file.getFullPath(), true)) {
 				// For new text files use the line delimiter as defined in the workspace
-				String expectedLD= getLineDelimiterPreference(file);
+				String expectedLD = ResourcesPlugin.getLineSeparator(file);
 				if (expectedLD != null) {
 					String patchLD= TextUtilities.determineLineDelimiter(contents, expectedLD);
 					if (!expectedLD.equals(patchLD))
@@ -384,20 +380,6 @@ public class Patcher implements IHunkFilter {
 		}
 
 		store(bytes,file, pm);
-	}
-
-	private static String getLineDelimiterPreference(IFile file) {
-		IScopeContext[] scopeContext;
-		if (file != null && file.getProject() != null) {
-			// project preference
-			scopeContext= new IScopeContext[] { new ProjectScope(file.getProject()) };
-			String lineDelimiter= Platform.getPreferencesService().getString(Platform.PI_RUNTIME, Platform.PREF_LINE_SEPARATOR, null, scopeContext);
-			if (lineDelimiter != null)
-				return lineDelimiter;
-		}
-		// workspace preference
-		scopeContext= new IScopeContext[] { InstanceScope.INSTANCE };
-		return Platform.getPreferencesService().getString(Platform.PI_RUNTIME, Platform.PREF_LINE_SEPARATOR, null, scopeContext);
 	}
 
 	protected void store(byte[] bytes, IFile file, IProgressMonitor pm) throws CoreException {
